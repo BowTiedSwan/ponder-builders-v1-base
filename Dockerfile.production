@@ -1,0 +1,71 @@
+# Multi-stage Dockerfile optimized for DigitalOcean App Platform
+# Build stage
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /workspace
+
+# Install pnpm
+RUN npm install -g pnpm@latest
+
+# Copy package files for dependency installation
+COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/ponder-builders-v1-base/package.json ./apps/ponder-builders-v1-base/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --production=false
+
+# Copy source code
+COPY apps/ponder-builders-v1-base/ ./apps/ponder-builders-v1-base/
+
+# Note: Ponder apps don't need a build step - they run directly from source
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S ponder && \
+    adduser -S ponder -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm@latest
+
+# Copy package files
+COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/ponder-builders-v1-base/package.json ./apps/ponder-builders-v1-base/
+
+# Install production dependencies only
+RUN pnpm install --frozen-lockfile --production=true
+
+# Copy built application
+COPY --from=builder --chown=ponder:ponder /workspace/apps/ponder-builders-v1-base/ ./apps/ponder-builders-v1-base/
+
+# Set ownership
+RUN chown -R ponder:ponder /app
+
+# Switch to non-root user
+USER ponder
+
+# Expose port
+EXPOSE 42069
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:42069/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+
+# Set working directory to the app
+WORKDIR /app/apps/ponder-builders-v1-base
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application with schema support for zero-downtime deployments
+# If DATABASE_SCHEMA is set, use it; otherwise use default 'builders_v1_base_prod'
+# Always use --views-schema builders_v1_base for consistent view access
+CMD ["sh", "-c", "pnpm start --schema ${DATABASE_SCHEMA:-builders_v1_base_prod} --views-schema builders_v1_base"]

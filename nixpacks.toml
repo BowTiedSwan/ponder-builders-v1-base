@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "pnpm"]
+
+[phases.install]
+cmds = ["pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = []
+
+[start]
+cmd = "pnpm start --schema ${RAILWAY_DEPLOYMENT_ID:-builders_v1_base_prod} --views-schema builders_v1_base"
