@@ -93,8 +93,9 @@ ponder.on("Builders:BuilderPoolCreated", async ({ event, context }: any) => {
     .where(eq(counters.id, "global"));
 });
 
-ponder.on("Builders:Deposited", async ({ event, context }: any) => {
-  const { user, builderPoolId, amount } = event.args;
+ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
+  const { builderPool, user, amount } = event.args;
+  const builderPoolId = builderPool;
   
   const userId = createUserId(builderPoolId, user);
   
@@ -165,8 +166,9 @@ ponder.on("Builders:Deposited", async ({ event, context }: any) => {
     .where(eq(buildersProject.id, builderPoolId));
 });
 
-ponder.on("Builders:Withdrawn", async ({ event, context }: any) => {
-  const { user, builderPoolId, amount } = event.args;
+ponder.on("Builders:UserWithdrawn", async ({ event, context }: any) => {
+  const { builderPool, user, amount } = event.args;
+  const builderPoolId = builderPool;
   
   const userId = createUserId(builderPoolId, user);
   
@@ -218,54 +220,9 @@ ponder.on("Builders:Withdrawn", async ({ event, context }: any) => {
     .where(eq(buildersProject.id, builderPoolId));
 });
 
-ponder.on("Builders:Claimed", async ({ event, context }: any) => {
-  const { user, builderPoolId, amount } = event.args;
-  
-  const userId = createUserId(builderPoolId, user);
-  
-  // Create staking event record
-  await context.db.insert(stakingEvent).values({
-    id: `${event.transaction.hash}-${event.log.logIndex}`,
-    buildersProjectId: builderPoolId,
-    userAddress: user,
-    eventType: "CLAIM",
-    amount: amount,
-    blockNumber: event.block.number,
-    blockTimestamp: Number(context.block.timestamp),
-    transactionHash: event.transaction.hash,
-    logIndex: event.log.logIndex,
-    chainId: context.chain.id,
-  });
-
-  // Update user claimed amount
-  const existingUser = await context.db
-    .select()
-    .from(buildersUser)
-    .where(eq(buildersUser.id, userId))
-    .limit(1);
-
-  if (existingUser.length > 0) {
-    await context.db
-      .update(buildersUser)
-      .set({
-        claimed: existingUser[0].claimed + amount,
-      })
-      .where(eq(buildersUser.id, userId));
-  }
-
-  // Update project total claimed
-  const totalClaimed = await context.db
-    .select({ sum: sql`sum(${buildersUser.claimed})` })
-    .from(buildersUser)
-    .where(eq(buildersUser.buildersProjectId, builderPoolId));
-
-  await context.db
-    .update(buildersProject)
-    .set({
-      totalClaimed: totalClaimed[0].sum || 0n,
-    })
-    .where(eq(buildersProject.id, builderPoolId));
-});
+// Note: There's no "Claimed" event in the ABI. User claims are not emitted as events.
+// If claims need to be tracked, they would need to be calculated from contract state
+// by reading user data periodically or tracking claim transactions differently.
 
 // MOR Token Transfer Events
 ponder.on("MorToken:Transfer", async ({ event, context }: any) => {
