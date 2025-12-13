@@ -44,38 +44,31 @@ const getOrCreateCounters = async (context: any) => {
 // Builders Contract Events
 
 ponder.on("Builders:BuilderPoolCreated", async ({ event, context }: any) => {
-  const { poolId, name, admin } = event.args;
+  const { builderPoolId, builderPool } = event.args;
+  // builderPool is a tuple with: name, admin, poolStart, withdrawLockPeriodAfterDeposit, claimLockEnd, minimalDeposit
   
-  // Read additional pool parameters from contract
-  const [poolInfo, currentReward] = await Promise.all([
-    context.client.readContract({
-      address: event.log.address,
-      abi: context.contracts.Builders.abi,
-      functionName: "usersData",
-      args: [admin, poolId], // Get admin's data to understand pool structure
-    }),
-    context.client.readContract({
-      address: event.log.address,
-      abi: context.contracts.Builders.abi,
-      functionName: "getCurrentBuilderReward",
-      args: [poolId],
-    }),
-  ]);
+  // Extract fields from the builderPool tuple
+  const {
+    name,
+    admin,
+    poolStart,
+    withdrawLockPeriodAfterDeposit,
+    claimLockEnd,
+    minimalDeposit,
+  } = builderPool;
 
   // Create the builders project
   await context.db.insert(buildersProject).values({
-    id: poolId,
+    id: builderPoolId,
     name: name,
     admin: admin,
     totalStaked: 0n,
     totalUsers: 0,
     totalClaimed: 0n,
-    // Note: These would need to be derived from pool creation parameters
-    // For now using placeholder values - in practice, these should come from the createBuilderPool call data
-    minimalDeposit: 1000000000000000000n, // 1 MOR placeholder
-    withdrawLockPeriodAfterDeposit: 86400n * 30n, // 30 days placeholder
-    claimLockEnd: BigInt(context.block.timestamp) + 86400n * 365n, // 1 year placeholder
-    startsAt: BigInt(context.block.timestamp),
+    minimalDeposit: minimalDeposit,
+    withdrawLockPeriodAfterDeposit: BigInt(withdrawLockPeriodAfterDeposit),
+    claimLockEnd: BigInt(claimLockEnd),
+    startsAt: BigInt(poolStart),
     chainId: context.chain.id,
     contractAddress: event.log.address,
     createdAt: Number(context.block.timestamp),
