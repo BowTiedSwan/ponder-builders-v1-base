@@ -77,7 +77,7 @@ export default createConfig({
       abi: ERC20Abi as Abi,
       chain: "base",
       address: (process.env.MOR_TOKEN_ADDRESS || "0x7431ADA8A591C955A994A21710752ef9b882b8e3") as `0x${string}`,
-      startBlock: Number(process.env.MOR_TOKEN_START_BLOCK || "7500000"),
+      startBlock: Number(process.env.MOR_TOKEN_START_BLOCK || "24381796"),
     },
   },
 });
