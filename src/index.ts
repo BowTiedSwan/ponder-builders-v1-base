@@ -15,7 +15,7 @@ const createUserId = (projectId: string, userAddress: string) =>
 
 // Helper function to get or create counters
 const getOrCreateCounters = async (context: any, blockTimestamp: number) => {
-  let counter = await context.db
+  let counter = await context.db.sql
     .select()
     .from(counters)
     .where(eq(counters.id, "global"))
@@ -31,7 +31,7 @@ const getOrCreateCounters = async (context: any, blockTimestamp: number) => {
       lastUpdated: blockTimestamp,
     });
     
-    counter = await context.db
+    counter = await context.db.sql
       .select()
       .from(counters)
       .where(eq(counters.id, "global"))
@@ -140,12 +140,12 @@ ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
     });
 
   // Update project totals
-  const existingUsers = await context.db
+  const existingUsers = await context.db.sql
     .select({ count: sql`count(*)` })
     .from(buildersUser)
     .where(eq(buildersUser.buildersProjectId, builderPoolId));
 
-  const totalStaked = await context.db
+  const totalStaked = await context.db.sql
     .select({ sum: sql`sum(${buildersUser.staked})` })
     .from(buildersUser)
     .where(eq(buildersUser.buildersProjectId, builderPoolId));
@@ -200,7 +200,7 @@ ponder.on("Builders:UserWithdrawn", async ({ event, context }: any) => {
     .where(eq(buildersUser.id, userId));
 
   // Update project totals
-  const totalStaked = await context.db
+  const totalStaked = await context.db.sql
     .select({ sum: sql`sum(${buildersUser.staked})` })
     .from(buildersUser)
     .where(eq(buildersUser.buildersProjectId, builderPoolId));
