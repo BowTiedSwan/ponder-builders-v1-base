@@ -14,7 +14,7 @@ const createUserId = (projectId: string, userAddress: string) =>
   `${projectId}-${userAddress.toLowerCase()}`;
 
 // Helper function to get or create counters
-const getOrCreateCounters = async (context: any) => {
+const getOrCreateCounters = async (context: any, blockTimestamp: number) => {
   let counter = await context.db
     .select()
     .from(counters)
@@ -28,7 +28,7 @@ const getOrCreateCounters = async (context: any) => {
       totalSubnets: 0n, // Changed to BigInt to match expected schema
       totalStaked: 0n,
       totalUsers: 0,
-      lastUpdated: Number(context.block.timestamp),
+      lastUpdated: blockTimestamp,
     });
     
     counter = await context.db
@@ -71,17 +71,17 @@ ponder.on("Builders:BuilderPoolCreated", async ({ event, context }: any) => {
     startsAt: BigInt(poolStart),
     chainId: context.chain.id,
     contractAddress: event.log.address,
-    createdAt: Number(context.block.timestamp),
+    createdAt: Number(event.block.timestamp),
     createdAtBlock: event.block.number,
   });
 
   // Update counters
-  const counter = await getOrCreateCounters(context);
+  const counter = await getOrCreateCounters(context, Number(event.block.timestamp));
   await context.db
     .update(counters)
     .set({
       totalBuildersProjects: BigInt(counter.totalBuildersProjects) + 1n, // Changed to BigInt to match expected schema
-      lastUpdated: Number(context.block.timestamp),
+      lastUpdated: Number(event.block.timestamp),
     })
     .where(eq(counters.id, "global"));
 });
@@ -100,7 +100,7 @@ ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
     eventType: "DEPOSIT",
     amount: amount,
     blockNumber: event.block.number,
-    blockTimestamp: Number(context.block.timestamp),
+    blockTimestamp: Number(event.block.timestamp),
     transactionHash: event.transaction.hash,
     logIndex: event.log.logIndex,
     chainId: context.chain.id,
@@ -125,7 +125,7 @@ ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
       address: user,
       staked: deposited,
       claimed: 0n, // Will be updated on claim events
-      lastStake: BigInt(context.block.timestamp),
+      lastStake: BigInt(event.block.timestamp),
       claimLockEnd: claimLockStart,
       lastDeposit: lastDeposit,
       virtualDeposited: virtualDeposited,
@@ -133,7 +133,7 @@ ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
     })
     .onConflictDoUpdate({
       staked: deposited,
-      lastStake: BigInt(context.block.timestamp),
+      lastStake: BigInt(event.block.timestamp),
       claimLockEnd: claimLockStart,
       lastDeposit: lastDeposit,
       virtualDeposited: virtualDeposited,
@@ -173,7 +173,7 @@ ponder.on("Builders:UserWithdrawn", async ({ event, context }: any) => {
     eventType: "WITHDRAW",
     amount: amount,
     blockNumber: event.block.number,
-    blockTimestamp: Number(context.block.timestamp),
+    blockTimestamp: Number(event.block.timestamp),
     transactionHash: event.transaction.hash,
     logIndex: event.log.logIndex,
     chainId: context.chain.id,
@@ -244,7 +244,7 @@ ponder.on("MorToken:Transfer", async ({ event, context }: any) => {
     to: to,
     value: value,
     blockNumber: event.block.number,
-    blockTimestamp: Number(context.block.timestamp),
+    blockTimestamp: Number(event.block.timestamp),
     transactionHash: event.transaction.hash,
     logIndex: event.log.logIndex,
     chainId: context.chain.id,
