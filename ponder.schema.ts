@@ -6,12 +6,14 @@ export const buildersProject = onchainTable("builders_project", (t) => ({
   name: t.text().notNull(),
   admin: t.hex().notNull(), // Administrator address
   totalStaked: t.bigint().notNull().default(0n),
-  totalUsers: t.integer().notNull().default(0),
+  totalUsers: t.bigint().notNull().default(0n), // Changed to BigInt to match expected schema
   totalClaimed: t.bigint().notNull().default(0n),
   minimalDeposit: t.bigint().notNull(),
   withdrawLockPeriodAfterDeposit: t.bigint().notNull(), // Lock period in seconds
   claimLockEnd: t.bigint().notNull(), // Claim lock end timestamp
   startsAt: t.bigint().notNull(), // Pool start timestamp
+  // Note: chainId, contractAddress, createdAt, createdAtBlock are extra fields not in expected schema
+  // Keeping them for internal tracking but they won't match the documented schema
   chainId: t.integer().notNull(), // Track which chain this project is on
   contractAddress: t.hex().notNull(), // Builders contract address
   createdAt: t.integer().notNull(), // Block timestamp when created
@@ -77,8 +79,10 @@ export const dynamicSubnet = onchainTable("dynamic_subnet", (t) => ({
 // Global counters - matches GraphQL counters entity
 export const counters = onchainTable("counters", (t) => ({
   id: t.text().primaryKey().default("global"), // Single row
-  totalBuildersProjects: t.integer().notNull().default(0),
-  totalSubnets: t.integer().notNull().default(0),
+  totalBuildersProjects: t.bigint().notNull().default(0n), // Changed to BigInt to match expected schema
+  totalSubnets: t.bigint().notNull().default(0n), // Changed to BigInt to match expected schema
+  // Note: totalStaked, totalUsers, lastUpdated are extra fields not in expected schema
+  // Keeping them for internal tracking but they won't match the documented schema
   totalStaked: t.bigint().notNull().default(0n), // Total across all projects
   totalUsers: t.integer().notNull().default(0), // Unique users across all projects
   lastUpdated: t.integer().notNull(),
@@ -91,7 +95,7 @@ export const buildersProjectRelations = relations(buildersProject, ({ many }) =>
 }));
 
 export const buildersUserRelations = relations(buildersUser, ({ one }) => ({
-  project: one(buildersProject, {
+  buildersProject: one(buildersProject, {
     fields: [buildersUser.buildersProjectId],
     references: [buildersProject.id],
   }),

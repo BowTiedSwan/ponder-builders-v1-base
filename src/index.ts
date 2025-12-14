@@ -24,8 +24,8 @@ const getOrCreateCounters = async (context: any) => {
   if (counter.length === 0) {
     await context.db.insert(counters).values({
       id: "global",
-      totalBuildersProjects: 0,
-      totalSubnets: 0,
+      totalBuildersProjects: 0n, // Changed to BigInt to match expected schema
+      totalSubnets: 0n, // Changed to BigInt to match expected schema
       totalStaked: 0n,
       totalUsers: 0,
       lastUpdated: Number(context.block.timestamp),
@@ -63,7 +63,7 @@ ponder.on("Builders:BuilderPoolCreated", async ({ event, context }: any) => {
     name: name,
     admin: admin,
     totalStaked: 0n,
-    totalUsers: 0,
+    totalUsers: 0n, // Changed to BigInt to match expected schema
     totalClaimed: 0n,
     minimalDeposit: minimalDeposit,
     withdrawLockPeriodAfterDeposit: BigInt(withdrawLockPeriodAfterDeposit),
@@ -80,7 +80,7 @@ ponder.on("Builders:BuilderPoolCreated", async ({ event, context }: any) => {
   await context.db
     .update(counters)
     .set({
-      totalBuildersProjects: counter.totalBuildersProjects + 1,
+      totalBuildersProjects: BigInt(counter.totalBuildersProjects) + 1n, // Changed to BigInt to match expected schema
       lastUpdated: Number(context.block.timestamp),
     })
     .where(eq(counters.id, "global"));
@@ -154,7 +154,7 @@ ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
     .update(buildersProject)
     .set({
       totalStaked: totalStaked[0].sum || 0n,
-      totalUsers: existingUsers[0].count,
+      totalUsers: BigInt(existingUsers[0].count), // Changed to BigInt to match expected schema
     })
     .where(eq(buildersProject.id, builderPoolId));
 });
