@@ -57,7 +57,7 @@ export default createConfig({
       rpc: loadBalance([
         http(process.env.PONDER_RPC_URL_8453 || "https://mainnet.base.org"),
         rateLimit(http("https://base-rpc.publicnode.com"), { 
-          requestsPerSecond: 10 
+          requestsPerSecond: 25 
         }),
       ]),
     },
