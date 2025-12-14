@@ -77,7 +77,7 @@ ponder.on("Builders:BuilderPoolCreated", async ({ event, context }: any) => {
 
   // Update counters
   const counter = await getOrCreateCounters(context, Number(event.block.timestamp));
-  await context.db
+  await context.db.sql
     .update(counters)
     .set({
       totalBuildersProjects: BigInt(counter.totalBuildersProjects) + 1n, // Changed to BigInt to match expected schema
@@ -150,7 +150,7 @@ ponder.on("Builders:UserDeposited", async ({ event, context }: any) => {
     .from(buildersUser)
     .where(eq(buildersUser.buildersProjectId, builderPoolId));
 
-  await context.db
+  await context.db.sql
     .update(buildersProject)
     .set({
       totalStaked: totalStaked[0].sum || 0n,
@@ -190,7 +190,7 @@ ponder.on("Builders:UserWithdrawn", async ({ event, context }: any) => {
   const [lastDeposit, claimLockStart, deposited, virtualDeposited] = userData;
 
   // Update user record
-  await context.db
+  await context.db.sql
     .update(buildersUser)
     .set({
       staked: deposited,
@@ -205,7 +205,7 @@ ponder.on("Builders:UserWithdrawn", async ({ event, context }: any) => {
     .from(buildersUser)
     .where(eq(buildersUser.buildersProjectId, builderPoolId));
 
-  await context.db
+  await context.db.sql
     .update(buildersProject)
     .set({
       totalStaked: totalStaked[0].sum || 0n,
