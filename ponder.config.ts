@@ -68,7 +68,7 @@ export default createConfig({
       abi: BuildersAbi as Abi,
       chain: "base",
       address: (process.env.BUILDERS_CONTRACT_ADDRESS || "0x42BB446eAE6dca7723a9eBdb81EA88aFe77eF4B9") as `0x${string}`,
-      startBlock: Number(process.env.BUILDERS_START_BLOCK || "8000000"),
+      startBlock: Number(process.env.BUILDERS_START_BLOCK || "24381796"),
       includeTransactionReceipts: true,
     },
 
