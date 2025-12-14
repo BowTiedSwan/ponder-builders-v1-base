@@ -46,7 +46,7 @@ export default createConfig({
           kind: "postgres",
           connectionString: databaseUrl,
           poolConfig: {
-            max: 30,
+            max: 10, // Reduced from 30 to avoid overwhelming Railway Hobby plan
           },
         },
       }
